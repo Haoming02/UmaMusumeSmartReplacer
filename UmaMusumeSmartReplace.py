@@ -1,19 +1,20 @@
 import os
 import shutil
 import tkinter as tk
+import pandas as pd
+import sqlite3
 
 # Example:      McQueen wears Spe's Swimsuit
 #   File A
 #   McQueen (Anime)
 #       ID:     1013_02
-#       PFB:    SDB6WCQF25CCGGN55K64L7XUY2IHCTVM
 #   File B
 #   Spe (Swimsuit)
 #       ID:     1001_30
-#       PFB:    DIREYA4ULC3UD6AJY5WWAQR4IOHHOXAX
 
 CURRENT_PATH = '{Folder of This File}'
 DATA_PATH = '{UserName}/AppData/LocalLow/Cygames/umamusume/dat'
+META = '{UserName}/AppData/LocalLow/Cygames/umamusume/meta'
 TEMP_PATH = 'Replacer'
 
 # XXXX_YY
@@ -21,11 +22,10 @@ ID_LENGTH = 7
 # XXXX
 ID_SHORT = 4
 
-def replaceID(oldFile, newFile, oldID, newID):
-    l = os.path.getsize(oldFile)
-    shutil.copyfile(oldFile, newFile)
+def replaceID(file, oldID, newID):
+    l = os.path.getsize(file)
 
-    with open(newFile, 'r+b') as FILE:
+    with open(file, 'r+b') as FILE:
         for i in range(l - ID_LENGTH):
             FILE.seek(i)
             byte = FILE.read(ID_LENGTH)
@@ -44,56 +44,84 @@ def replaceID(oldFile, newFile, oldID, newID):
 
     FILE.close()
 
+def getHash(ID):
+    prefab = f'3d/chara/body/bdy{ID}/pfb_bdy{ID}'
+    material = f'sourceresources/3d/chara/body/bdy{ID}/materials/mtl_bdy{ID}'
+
+    pfb = pd.read_sql_query(f'select * from a where "n" = "{prefab}";', META)
+    mat = pd.read_sql_query(f'select * from a where "n" = "{material}";', META)
+
+    return pfb.iloc[0,6], mat.iloc[0,6]
+
 def onRun():
-    hashA = oHash.get()
-    hashB = nHash.get()
     idA = oID.get()
     idB = nID.get()
 
-    if len(hashA) == 0 or len(hashB) == 0 or len(idA) != ID_LENGTH or len(idB) != ID_LENGTH:
+    if len(idA) != ID_LENGTH or len(idB) != ID_LENGTH:
         print('Invalid Inputs')
     else:
-        tempFolder = TEMP_PATH + '/' + 'BackUp'
+        pfbA_hash, matA_hash = getHash(idA)
+        pfbB_hash, matB_hash = getHash(idB)
 
-        folderA = hashA[0:2]
-        fileA = DATA_PATH + '/' + folderA + '/' + hashA
-        shutil.copy(fileA, tempFolder)
+        backupFolder = TEMP_PATH + '/' + 'BackUp'
+        editedFolder = TEMP_PATH + '/' + 'Edited'
 
-        folderB = hashB[0:2]
-        fileB = DATA_PATH + '/' + folderB + '/' + hashB
-        shutil.copy(fileB, tempFolder)
+        folderPA = pfbA_hash[0:2]
+        file = DATA_PATH + '/' + folderPA + '/' + pfbA_hash
+        shutil.copy(file, backupFolder)
 
-        replacement = TEMP_PATH + '/' + 'BackUp' + '/' + hashB
-        edited = TEMP_PATH + '/' + 'Edited' + '/' + hashA
+        folderMA = matA_hash[0:2]
+        file = DATA_PATH + '/' + folderMA + '/' + matA_hash
+        shutil.copy(file, backupFolder)
 
-        replaceID(replacement, edited, idB, idA)
-        shutil.copyfile(edited, fileA)
+        folderPB = pfbB_hash[0:2]
+        file = DATA_PATH + '/' + folderPB + '/' + pfbB_hash
+        shutil.copyfile(file, editedFolder + '/' + pfbA_hash)
 
-        print(f'File {hashA} has been replaced by {hashB}')
+        folderMB = matB_hash[0:2]
+        file = DATA_PATH + '/' + folderMB + '/' + matB_hash
+        shutil.copyfile(file, editedFolder + '/' + matA_hash)
+
+        newPFB = editedFolder + '/' + pfbA_hash
+        newMAT = editedFolder + '/' + matA_hash
+
+        replaceID(newPFB, idB, idA)
+        replaceID(newMAT, idB, idA)
+
+        shutil.copyfile(newPFB, DATA_PATH + '/' + folderPA + '/' + pfbA_hash)
+        shutil.copyfile(newMAT, DATA_PATH + '/' + folderMA + '/' + matA_hash)
+
+        print(f'ID {idA} has been replaced by ID {idB}')
 
 def onClear():
     oID.delete(0, 'end')
-    oHash.delete(0, 'end')
     nID.delete(0, 'end')
-    nHash.delete(0, 'end')
     print('Cleared Entry')
 
 def onReset():
-    hashA = oHash.get()
+    idA = oID.get()
+    pfbA_hash, matA_hash = getHash(idA)
 
-    if len(hashA) == 0:
+    if len(idA) != ID_LENGTH:
         print('Invalid Inputs')
     else:
         tempFolder = TEMP_PATH + '/' + 'BackUp'
 
-        folderA = hashA[0:2]
+        folderA = pfbA_hash[0:2]
 
-        edited = DATA_PATH + '/' + folderA + '/' + hashA
-        backup = TEMP_PATH + '/' + 'BackUp' + '/' + hashA
+        edited = DATA_PATH + '/' + folderA + '/' + pfbA_hash
+        backup = TEMP_PATH + '/' + 'BackUp' + '/' + pfbA_hash
 
         shutil.copyfile(backup, edited)
 
-        print(f'File {hashA} has been restored from Backup!')
+        folderB = matA_hash[0:2]
+
+        edited = DATA_PATH + '/' + folderB + '/' + matA_hash
+        backup = TEMP_PATH + '/' + 'BackUp' + '/' + matA_hash
+
+        shutil.copyfile(backup, edited)
+
+        print(f'ID {idA} has been restored from Backup!')
 
 # --- Initialize ---
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -101,8 +129,11 @@ CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 roaming = os.getenv('APPDATA')
 appdata = os.path.dirname(roaming)
 DATA_PATH = appdata.replace(os.sep, '/') + '/LocalLow/Cygames/umamusume/dat'
+META_PATH = appdata.replace(os.sep, '/') + '/LocalLow/Cygames/umamusume/meta'
 print('Assets Folder Set to: ' + DATA_PATH)
-    
+
+META = sqlite3.connect(META_PATH)
+
 if not os.path.exists(TEMP_PATH):
     os.mkdir(TEMP_PATH)
 
@@ -114,11 +145,11 @@ if not os.path.exists(os.path.join(TEMP_PATH, 'Edited')):
 
 TEMP_PATH = (os.path.join(CURRENT_PATH, TEMP_PATH)).replace(os.sep, '/')
 print('Temp Folder Set to: ' + TEMP_PATH)
-    
+
 # --- Main ---
 mainWindow = tk.Tk()
 mainWindow.title('Replacer')
-mainWindow.geometry("240x240")
+mainWindow.geometry("225x175")
 mainWindow.grid()
 
 tk.Label(mainWindow, text="A -> B").grid(column=0, row=0, columnspan=3, sticky = tk.W + tk.E)
@@ -126,25 +157,17 @@ tk.Label(mainWindow, text="A -> B").grid(column=0, row=0, columnspan=3, sticky =
 tk.Label(mainWindow, text="File A (to be replaced)").grid(column=0, row=1, columnspan=3, sticky = tk.W + tk.E)
 
 tk.Label(mainWindow, text="ID: ").grid(column=0, row=2, sticky = tk.W)
-oID = tk.Entry(mainWindow, width = 20)
+oID = tk.Entry(mainWindow)
 oID.grid(column=1, row=2, columnspan=2, sticky = tk.E)
 
-tk.Label(mainWindow, text="Hash: ").grid(column=0, row=3, sticky = tk.W)
-oHash = tk.Entry(mainWindow, width = 20)
-oHash.grid(column=1, row=3, columnspan=2, sticky = tk.E)
+tk.Label(mainWindow, text="File B (the replacement)").grid(column=0, row=3, columnspan=3, sticky = tk.W + tk.E)
 
-tk.Label(mainWindow, text="File B (the replacement)").grid(column=0, row=4, columnspan=3, sticky = tk.W + tk.E)
+tk.Label(mainWindow, text="ID: ").grid(column=0, row=4, sticky = tk.W)
+nID = tk.Entry(mainWindow)
+nID.grid(column=1, row=4, columnspan=2, sticky = tk.E)
 
-tk.Label(mainWindow, text="ID: ").grid(column=0, row=5, sticky = tk.W)
-nID = tk.Entry(mainWindow, width = 20)
-nID.grid(column=1, row=5, columnspan=2, sticky = tk.E)
-
-tk.Label(mainWindow, text="Hash: ").grid(column=0, row=6, sticky = tk.W)
-nHash = tk.Entry(mainWindow, width = 20)
-nHash.grid(column=1, row=6, columnspan=2, sticky = tk.E)
-
-tk.Button(mainWindow, text = "Run", command = onRun).grid(column=0, row=7)
-tk.Button(mainWindow, text = "Clear", command = onClear).grid(column=1, row=7)
-tk.Button(mainWindow, text = "Restore", command = onReset).grid(column=2, row=7)
+tk.Button(mainWindow, text = "Run", command = onRun).grid(column=0, row=5)
+tk.Button(mainWindow, text = "Clear", command = onClear).grid(column=1, row=5)
+tk.Button(mainWindow, text = "Restore", command = onReset).grid(column=2, row=5)
 
 mainWindow.mainloop()
