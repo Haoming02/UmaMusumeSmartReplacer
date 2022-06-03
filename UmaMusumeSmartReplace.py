@@ -1,111 +1,51 @@
 import common
-import functions
-import os
-import shutil
+import manual
+import body
+import head
+import shared
+#import wetify					# This breaks Double-Click for some reason; Use command line to launch if imported
+import exres
 import tkinter as tk
+from tkinter import ttk
 
-def onRun():
-    idA = oID.get()
-    idB = nID.get()
+def main():
+	root = tk.Tk()
+	root.title('Uma Musume Smart Replacer')
+	root.geometry("600x400")
 
-    if len(idA) != common.ID_LENGTH or len(idB) != common.ID_LENGTH:
-        print('Invalid Inputs')
-    else:
-        pfbA_hash, matA_hash = functions.getHash(idA)
-        pfbB_hash, matB_hash = functions.getHash(idB)
+	mainWindow = ttk.Notebook(root)
+	mainWindow.pack(fill = "both", expand = 1)
 
-        backupFolder = TEMP_PATH + '/' + 'BackUp'
-        editedFolder = TEMP_PATH + '/' + 'Edited'
+	manualTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	bodyTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	headTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	commonTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	wetTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	externalTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
 
-        folderPA = pfbA_hash[0:2]
-        file = DATA_PATH + '/' + folderPA + '/' + pfbA_hash
-        shutil.copy(file, backupFolder)
+	manualTab.pack(fill = "both", expand = 1)
+	bodyTab.pack(fill = "both", expand = 1)
+	headTab.pack(fill = "both", expand = 1)
+	commonTab.pack(fill = "both", expand = 1)
+	wetTab.pack(fill = "both", expand = 1)
+	externalTab.pack(fill = "both", expand = 1)
 
-        folderMA = matA_hash[0:2]
-        file = DATA_PATH + '/' + folderMA + '/' + matA_hash
-        shutil.copy(file, backupFolder)
+	mainWindow.add(manualTab, text="Manual")
+	mainWindow.add(bodyTab, text="Body")
+	mainWindow.add(headTab, text="Head")
+	mainWindow.add(commonTab, text="Common")
+	mainWindow.add(wetTab, text="Wet-ify")
+	mainWindow.add(externalTab, text="External Restore")
 
-        folderPB = pfbB_hash[0:2]
-        file = DATA_PATH + '/' + folderPB + '/' + pfbB_hash
-        shutil.copyfile(file, editedFolder + '/' + pfbA_hash)
+	manual.run(manualTab)
+	body.run(bodyTab)
+	#head.run(headTab)			# Doesn't Work
+	#shared.run(commonTab)		# Extremely Buggy
+	#wetify.run(wetTab)			# Only tested for 4 & 5
+	exres.run(externalTab)
 
-        folderMB = matB_hash[0:2]
-        file = DATA_PATH + '/' + folderMB + '/' + matB_hash
-        shutil.copyfile(file, editedFolder + '/' + matA_hash)
+	root.mainloop()
 
-        newPFB = editedFolder + '/' + pfbA_hash
-        newMAT = editedFolder + '/' + matA_hash
-
-        functions.replaceID(newPFB, idB, idA)
-        functions.replaceID(newMAT, idB, idA)
-
-        shutil.copyfile(newPFB, DATA_PATH + '/' + folderPA + '/' + pfbA_hash)
-        shutil.copyfile(newMAT, DATA_PATH + '/' + folderMA + '/' + matA_hash)
-
-        print(f'ID {idA} has been replaced by ID {idB}')
-
-def onClear():
-    oID.delete(0, 'end')
-    nID.delete(0, 'end')
-    print('Cleared Entry')
-
-def onReset():
-    idA = oID.get()
-    pfbA_hash, matA_hash = functions.getHash(idA)
-
-    if len(idA) != common.ID_LENGTH:
-        print('Invalid Inputs')
-    else:
-        tempFolder = TEMP_PATH + '/' + 'BackUp'
-
-        folderA = pfbA_hash[0:2]
-
-        edited = DATA_PATH + '/' + folderA + '/' + pfbA_hash
-        backup = TEMP_PATH + '/' + 'BackUp' + '/' + pfbA_hash
-
-        shutil.copyfile(backup, edited)
-
-        folderB = matA_hash[0:2]
-
-        edited = DATA_PATH + '/' + folderB + '/' + matA_hash
-        backup = TEMP_PATH + '/' + 'BackUp' + '/' + matA_hash
-
-        shutil.copyfile(backup, edited)
-
-        print(f'ID {idA} has been restored from Backup!')
-
-# --- Main ---
-common.initialize()
-
-global CURRENT_PATH
-global DATA_PATH
-global TEMP_PATH
-
-CURRENT_PATH = common.CURRENT_PATH
-DATA_PATH = common.DATA_PATH
-TEMP_PATH = common.TEMP_PATH
-
-mainWindow = tk.Tk()
-mainWindow.title('Replacer')
-mainWindow.geometry("225x175")
-mainWindow.grid()
-
-tk.Label(mainWindow, text="A -> B").grid(column=0, row=0, columnspan=3, sticky = tk.W + tk.E)
-
-tk.Label(mainWindow, text="File A (to be replaced)").grid(column=0, row=1, columnspan=3, sticky = tk.W + tk.E)
-
-tk.Label(mainWindow, text="ID: ").grid(column=0, row=2, sticky = tk.W)
-oID = tk.Entry(mainWindow)
-oID.grid(column=1, row=2, columnspan=2, sticky = tk.E)
-
-tk.Label(mainWindow, text="File B (the replacement)").grid(column=0, row=3, columnspan=3, sticky = tk.W + tk.E)
-
-tk.Label(mainWindow, text="ID: ").grid(column=0, row=4, sticky = tk.W)
-nID = tk.Entry(mainWindow)
-nID.grid(column=1, row=4, columnspan=2, sticky = tk.E)
-
-tk.Button(mainWindow, text = "Run", command = onRun).grid(column=0, row=5)
-tk.Button(mainWindow, text = "Clear", command = onClear).grid(column=1, row=5)
-tk.Button(mainWindow, text = "Restore", command = onReset).grid(column=2, row=5)
-
-mainWindow.mainloop()
+if __name__ == '__main__':
+	common.initialize()
+	main()
