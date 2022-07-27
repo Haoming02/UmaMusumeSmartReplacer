@@ -4,6 +4,7 @@ import sharedfunctions
 import os
 import shutil
 import tkinter as tk
+import threading
 
 # pfb, base, ctrl, diff, shade, mat
 FILE_COUNT = 6
@@ -22,7 +23,16 @@ def onClear():
     back.delete(0, 'end')
     print('Cleared Entry')
 
+def Restore(hashA):
+    folderA = hashA[0:2]
+
+    edited = DATA_PATH + '/' + folderA + '/' + hashA
+    backup = BACKUP_PATH + '/' + folderA + '/' + hashA
+
+    shutil.copyfile(backup, edited)
+
 def onReset():
+    global BACKUP_PATH
     BACKUP_PATH = back.get()
     idA = oID.get()
 
@@ -30,13 +40,19 @@ def onReset():
         print('Invalid Inputs')
     else:
         if idA[0] != '0':
-            hashA = functions.getHash(idA)
-            folderA = hashA[0:2]
+            body_P, body_M = functions.getHash(idA)
+            head = functions.getHeadHash(idA)
 
-            edited = DATA_PATH + '/' + folderA + '/' + hashA
-            backup = BACKUP_PATH + '/' + folderA + '/' + hashA
+            hashes = head + [body_P, body_M]
 
-            shutil.copyfile(backup, edited)
+            methods = []
+
+            for i in range(len(hashes)):
+                methods.append(threading.Thread(target = Restore, args = (hashes[i],)))
+                methods[i].start()
+
+            for i in range(len(hashes)):
+                methods[i].join()
         else:
             for he in range(HEIGHT_RANGE):
                 for sh in range(SHAPE_RANGE):

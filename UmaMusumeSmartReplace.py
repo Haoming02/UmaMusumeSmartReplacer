@@ -3,7 +3,7 @@ import manual
 import body
 import head
 import shared
-#import wetify					# This breaks Double-Click for some reason; Use command line to launch if imported
+import wetify					# This breaks Double-Click for some reason; Use command line to launch if imported
 import exres
 import tkinter as tk
 from tkinter import ttk
@@ -40,8 +40,8 @@ def main():
 	manual.run(manualTab)
 	body.run(bodyTab)
 	#head.run(headTab)			# Doesn't Work
-	#shared.run(commonTab)		# Extremely Buggy
-	#wetify.run(wetTab)			# Only tested for 4 & 5
+	shared.run(commonTab)		# Extremely Buggy
+	wetify.run(wetTab)			# Only tested for 4 & 5
 	exres.run(externalTab)
 
 	root.mainloop()

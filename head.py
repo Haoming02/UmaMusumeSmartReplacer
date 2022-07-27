@@ -3,55 +3,46 @@ import functions
 import os
 import shutil
 import tkinter as tk
+import threading
+
+# pfb, cheek, eye, face, hair, mayu, tear
+FILE_COUNT = 7
+
+def Replace(hashA, hashB, idA, idB):
+    folderA = hashA[0:2]
+    fileA = DATA_PATH + '/' + folderA + '/' + hashA
+
+    folderB = hashB[0:2]
+    fileB = DATA_PATH + '/' + folderB + '/' + hashB
+    shutil.copyfile(fileB, editedFolder + '/' + hashA)
+
+    new = editedFolder + '/' + hashA
+
+    functions.replaceID(new, idB, idA)
+    shutil.copyfile(new, fileA)
 
 def onRun():
     idA = oID.get()
     idB = nID.get()
 
+    global  editedFolder
+
     if len(idA) != common.ID_LENGTH or len(idB) != common.ID_LENGTH:
         print('Invalid Inputs')
     else:
-        pfbA_hash, matA_F_hash, matA_H_hash = functions.getHeadHash(idA)
-        pfbB_hash, matB_F_hash, matB_H_hash = functions.getHeadHash(idB)
+        A = functions.getHeadHash(idA)
+        B = functions.getHeadHash(idB)
 
-        backupFolder = TEMP_PATH + '/' + 'BackUp'
         editedFolder = TEMP_PATH + '/' + 'Edited'
 
-        folderPA = pfbA_hash[0:2]
-        file = DATA_PATH + '/' + folderPA + '/' + pfbA_hash
-        shutil.copy(file, backupFolder)
+        methods = []
 
-        folderMA = matA_F_hash[0:2]
-        file = DATA_PATH + '/' + folderMA + '/' + matA_F_hash
-        shutil.copy(file, backupFolder)
+        for i in range(FILE_COUNT):
+            methods.append(threading.Thread(target = Replace, args = (A[i], B[i], idA, idB)))
+            methods[i].start()
 
-        folderMA2 = matA_H_hash[0:2]
-        file = DATA_PATH + '/' + folderMA2 + '/' + matA_H_hash
-        shutil.copy(file, backupFolder)
-
-        folderPB = pfbB_hash[0:2]
-        file = DATA_PATH + '/' + folderPB + '/' + pfbB_hash
-        shutil.copyfile(file, editedFolder + '/' + pfbA_hash)
-
-        folderMB = matB_F_hash[0:2]
-        file = DATA_PATH + '/' + folderMB + '/' + matB_F_hash
-        shutil.copyfile(file, editedFolder + '/' + matA_F_hash)
-
-        folderMB2 = matB_H_hash[0:2]
-        file = DATA_PATH + '/' + folderMB2 + '/' + matB_H_hash
-        shutil.copyfile(file, editedFolder + '/' + matA_H_hash)
-
-        newPFB = editedFolder + '/' + pfbA_hash
-        newMAT = editedFolder + '/' + matA_F_hash
-        newMAT2 = editedFolder + '/' + matA_H_hash
-
-        functions.replaceID(newPFB, idB, idA)
-        functions.replaceID(newMAT, idB, idA)
-        functions.replaceID(newMAT2, idB, idA)
-
-        shutil.copyfile(newPFB, DATA_PATH + '/' + folderPA + '/' + pfbA_hash)
-        shutil.copyfile(newMAT, DATA_PATH + '/' + folderMA + '/' + matA_F_hash)
-        shutil.copyfile(newMAT2, DATA_PATH + '/' + folderMA2 + '/' + matA_H_hash)
+        for i in range(FILE_COUNT):
+            methods[i].join()
 
         print(f'ID {idA} has been replaced by ID {idB}')
 
@@ -61,6 +52,7 @@ def onClear():
     print('Cleared Entry')
 
 def onReset():
+    """
     idA = oID.get()
     pfbA_hash, matA_F_hash, matA_H_hash = functions.getHeadHash(idA)
 
@@ -89,8 +81,10 @@ def onReset():
         backup = TEMP_PATH + '/' + 'BackUp' + '/' + matA_H_hash
 
         shutil.copyfile(backup, edited)
-
         print(f'ID {idA} has been restored from Backup!')
+        """
+    print('Not Implemented!')
+
 
 def run(mainWindow):
     global CURRENT_PATH
