@@ -1,9 +1,8 @@
 import common
 import manual
 import body
-import head
 import shared
-import wetify					# This breaks Double-Click for some reason; Use command line to launch if imported
+#import wetify
 import exres
 import tkinter as tk
 from tkinter import ttk
@@ -18,30 +17,26 @@ def main():
 
 	manualTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
 	bodyTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
-	headTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
 	commonTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
-	wetTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
+	#wetTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
 	externalTab = tk.Frame(mainWindow, width = 600, height = 400, bg = "gray")
 
 	manualTab.pack(fill = "both", expand = 1)
 	bodyTab.pack(fill = "both", expand = 1)
-	headTab.pack(fill = "both", expand = 1)
 	commonTab.pack(fill = "both", expand = 1)
-	wetTab.pack(fill = "both", expand = 1)
+	#wetTab.pack(fill = "both", expand = 1)
 	externalTab.pack(fill = "both", expand = 1)
 
 	mainWindow.add(manualTab, text="Manual")
 	mainWindow.add(bodyTab, text="Body")
-	mainWindow.add(headTab, text="Head")
 	mainWindow.add(commonTab, text="Common")
-	mainWindow.add(wetTab, text="Wet-ify")
+	#mainWindow.add(wetTab, text="Wet-ify")
 	mainWindow.add(externalTab, text="External Restore")
 
 	manual.run(manualTab)
 	body.run(bodyTab)
-	#head.run(headTab)			# Doesn't Work
 	shared.run(commonTab)		# Extremely Buggy
-	wetify.run(wetTab)			# Only tested for 4 & 5
+	#wetify.run(wetTab)			# Only tested for 4 & 5
 	exres.run(externalTab)
 
 	root.mainloop()
